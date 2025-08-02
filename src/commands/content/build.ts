@@ -1,9 +1,10 @@
 import { Command } from "commander";
 
 const buildCommand = new Command("build")
-  .arguments("[folderPath]")
-  .option("-c, --category <category>", "カテゴリを指定してビルド")
-  .description("コンテンツをビルドして content.meta.json を生成")
+  .usage("[folderPath] [options]")
+  .argument("[folderPath]", "ビルド対象のコンテンツディレクトリ (デフォルト: カレントディレクトリ)")
+  .option("-c, --category <category>", "指定したカテゴリに属するコンテンツのみビルド")
+  .description("コンテンツを解析し，メタデータファイル (`content.meta.json`) を生成・更新します．")
   .action((folderPath, options) => {
     if (options.category) {
       console.log(`カテゴリ「${options.category}」内をビルド`);

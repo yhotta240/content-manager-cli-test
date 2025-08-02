@@ -1,10 +1,11 @@
 import { Command } from "commander";
 
 const createCommand = new Command("create")
-  .arguments("[filePath]")
-  .option("-t, --title <title>", "タイトル")
-  .option("-c, --category <category>", "カテゴリ")
-  .description("新しいコンテンツを作成または既存ファイルから作成")
+  .usage("[filePath] [options]")
+  .argument("[filePath]", "テンプレートとして使用する既存のコンテンツファイル")
+  .option("-t, --title <title>", "新しいコンテンツのタイトル")
+  .option("-c, --category <category>", "新しいコンテンツのカテゴリ")
+  .description("新しいコンテンツファイルを作成します．既存のファイルをテンプレートとして使用することも可能です．")
   .action((filePath, options) => {
     const { title, category } = options;
 
