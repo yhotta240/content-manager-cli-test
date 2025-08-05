@@ -51,7 +51,13 @@ export interface ContentMetaIndex {
   metas: FullContentMeta[];
 }
 
+export type StructureKey = "category" | "date" | "title";
+
 export interface ContentMetaOptions {
-  title?: string;
-  category?: string;
+  structure?: StructureKey; // 構造
+  category?: string;        // カテゴリ
+  date?: string;            // YYYY-MM-DD
+  title?: string;           // タイトル
+  filename?: string;        // ファイル名
+  force?: boolean;          // 上書き
 }
