@@ -7,11 +7,11 @@ import { confirm } from "../../utils/confirm.js";
 const CONFIG_FILE = "content.config.json";
 
 // 設定ファイルを作成する
-function writeConfigFile(folderPath: string, config: ContentConfig) {
-  const configPath = path.join(folderPath, CONFIG_FILE);
+function writeConfigFile(contentDir: string, config: ContentConfig) {
+  const configPath = path.join(contentDir, CONFIG_FILE);
   // ディレクトリがなければ作成
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
+  if (!fs.existsSync(contentDir)) {
+    fs.mkdirSync(contentDir, { recursive: true });
   }
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -19,8 +19,8 @@ function writeConfigFile(folderPath: string, config: ContentConfig) {
 }
 
 // 'init' コマンドのアクション
-async function initAction(folderPath: string, options: ContentConfigOptions) {
-  const configPath = path.join(folderPath, CONFIG_FILE);
+async function initAction(contentDir: string, options: ContentConfigOptions) {
+  const configPath = path.join(contentDir, CONFIG_FILE);
 
   // 既存の設定ファイルの上書きを確認
   if (fs.existsSync(configPath)) {
@@ -32,15 +32,14 @@ async function initAction(folderPath: string, options: ContentConfigOptions) {
     }
   }
 
-  const { contentDir, metaIndexFile, lang, author, filePatterns }: ContentConfigOptions = options;
-  const projectName = path.basename(folderPath);
+  const { contentName, metaIndexFile, lang, author, filePatterns }: ContentConfigOptions = options;
   const targetFilePatterns = filePatterns
     ? filePatterns.split(",").map((s: string) => s.trim())
     : ["**/*.md", "**/*.txt", "**/*.html"];
 
   const config: ContentConfig = {
-    projectName: projectName,
-    contentDir: contentDir || ".",
+    contentDir: contentDir,
+    contentName: contentName || path.basename(contentDir),
     metaIndexFile: metaIndexFile || "content.meta.json",
     defaultMeta: {
       lang: lang || "ja",
@@ -49,19 +48,19 @@ async function initAction(folderPath: string, options: ContentConfigOptions) {
     filePatterns: targetFilePatterns
   };
 
-  writeConfigFile(folderPath, config);
+  writeConfigFile(contentDir, config);
 }
 
 const initCommand = new Command("init")
-  .usage("[folderPath] [options]")
-  .argument("[folderPath]", "初期化するコンテンツディレクトリ(デフォルト：content)", "content")
-  .option("-c, --content-dir <dir>", "コンテンツを保存するディレクトリ (プロジェクトルートからの相対パス)")
-  .option("-m, --meta-index-file <filename>", "生成されるメタデータファイルの名前")
-  .option("-a, --author <name>", "作成者")
-  .option("-l, --lang <lang>", "デフォルト言語")
-  .option("-f, --file-patterns <patterns>", "対象とするコンテンツのファイルパターン (カンマ区切り)")
+  .usage("[contentDir] [options]")
+  .argument("[contentDir]", "content.config.json を配置するディレクトリ（プロジェクトルートからの相対パス，デフォルト：content）", "content")
+  .option("-c, --content-name <name>", "コンテンツプロジェクトの名前（省略時は contentDir の末尾のディレクトリ名を使用）")
+  .option("-m, --meta-index-file <filename>", "生成するメタ情報インデックスファイルのファイル名")
+  .option("-a, --author <name>", "デフォルトの作成者名")
+  .option("-l, --lang <lang>", "デフォルトの言語コード（例：ja, en）")
+  .option("-f, --file-patterns <patterns>", "対象とするコンテンツファイルのパターン（カンマ区切りで複数指定可）")
   .summary("新しいコンテンツプロジェクトを初期化します．")
-  .description("指定されたディレクトリに `content.config.json` を作成し，コンテンツ管理プロジェクトをセットアップします．")
+  .description("指定されたディレクトリに `content.config.json` を作成し，コンテンツ管理プロジェクトの初期設定を行います．")
   .action(initAction);
 
 export default initCommand;

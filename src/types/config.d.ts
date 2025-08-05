@@ -1,6 +1,6 @@
 export interface ContentConfig {
-  projectName?: string;
-  contentDir?: string;
+  contentName?: string;  // content.config.json で定義されているコンテンツ名
+  contentDir?: string;   // content.config.json が置かれているディレクトリ(プロジェクトルートからの相対パス)
   metaIndexFile?: string;
   defaultMeta?: {
     author?: string;
@@ -11,7 +11,7 @@ export interface ContentConfig {
 }
 
 export interface ContentConfigOptions {
-  projectName?: string;
+  contentName?: string;
   contentDir?: string;
   metaIndexFile?: string;
   lang?: string;
