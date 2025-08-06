@@ -8,6 +8,19 @@ import { createFile } from "../../utils/file.js";
 import matter from "gray-matter";
 
 const CONFIG_FILE = "content.config.json";
+const STRUCTURE_ALIAS_MAP: Record<string, string> = {
+  c: "category",
+  d: "date",
+  t: "title",
+};
+
+function getStructureAlias(structure: string | undefined): string | undefined {
+  if (!structure) return;
+
+  return structure.split("/").map(part => part.split("-")
+    .map(token => STRUCTURE_ALIAS_MAP[token] ?? token)  // 省略形を正式名称に変換
+    .join("-")).join("/");
+}
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -27,36 +40,44 @@ async function createAction(contentDir: string, options: ContentMetaOptions) {
 
   const { structure, category, date, title, filename, force }: ContentMetaOptions = options;
 
-  // structure をパースしてパスを構築
-  const parts = structure?.split("/");
+  const expanded = getStructureAlias(structure);
+  const parts = expanded?.split("/");
   const pathParts: string[] = [];
 
   if (parts) {
     for (const part of parts) {
       const subParts = part.split("-"); // ワードの結合（階層ではない）
+      try {
+        const resolvedSubParts = subParts.map((p) => {
+          switch (p) {
+            case "category":
+              if (!category) {
+                throw "missing_category";
+              }
+              return category;
 
-      const resolvedSubParts = subParts.map((p) => {
-        switch (p) {
-          case "category":
-            if (!category) {
-              console.error("structureに 'category' が含まれていますが，--category オプションが指定されていません．");
-              process.exit(1);
-            }
-            return category;
+            case "date":
+              return date === "today" ? getToday() : date || getToday();
 
-          case "date":
-            return date === "today" ? getToday() : date || getToday();
+            case "title":
+              return title || "untitled";
 
-          case "title":
-            return title || "untitled";
+            default:
+              throw "invalid_structure";
+          }
+        });
 
-          default:
-            console.error("--structure <structure> の形式が正しくありません \n'category' | 'date' | 'title' からなります");
-            process.exit(1);
+        pathParts.push(resolvedSubParts.join("-"));
+      } catch (err) {
+        if (err === "missing_category") {
+          console.error("structureに 'category' が含まれていますが，--category オプションが指定されていません．");
+        } else if (err === "invalid_structure") {
+          console.error("--structure の形式が正しくありません．'category' | 'date' | 'title' のみ使用可能です．");
+        } else {
+          console.error("未知のエラーが発生しました");
         }
-      });
-
-      pathParts.push(resolvedSubParts.join("-"));
+        return;
+      }
     }
   }
 
@@ -64,7 +85,7 @@ async function createAction(contentDir: string, options: ContentMetaOptions) {
   const titleStr = title || "untitled";
   const dateDir = date === "today" ? getToday() : date || getToday();
   const contentPath = path.posix.join(contentDir, structurePath);
-  const contentFilePath = `${contentPath}/${filename}.md`;
+  const contentFilePath = `${contentPath.endsWith("/") ? contentPath : `${contentPath}/`}${filename}.md`;
 
   // ファイルの存在確認と上書き確認
   if (fs.existsSync(contentFilePath) && !force) {
@@ -98,24 +119,34 @@ async function createAction(contentDir: string, options: ContentMetaOptions) {
 const createCommand = new Command("create")
   .usage("<contentDir> [options]")
   .argument("contentDir", "コンテンツディレクトリ（content.config.json が配置されているディレクトリ）")
-  .option(
-    "-s, --structure <structure>", `出力先のディレクトリ構造を指定します．
-                              'category'，'date'，'title' を組み合わせて，contentDir 配下に階層を作成します．
-                              構造に 'category' を含む場合，'-c, --category' の指定が必須です．
-                              'date' と 'title' は省略可能で，省略時は現在日付やデフォルトタイトルが自動生成されます．
+  .option("-s, --structure <structure>", `出力先のディレクトリ構造を指定します．
+                              'category'，'date'，'title' を任意に組み合わせて，<contentDir> 配下に階層を作成します．
+
+                              注意：
+                                'category' を含む場合，'-c, --category' の指定が必須です．
+                                'date' と 'title' は省略可能で，未指定時は現在日付やデフォルトタイトル（untitled）が自動補完されます．
+
+                              構造の記法：
+                                '/' はディレクトリ階層の区切りを表し，'-' は同一ディレクトリ内のワード結合を表します．
+
                               例：
-                                --structure 'category/date/title'     → <contentDir>/<category>/YYYY-MM-DD/untitled
-                                --structure 'date-title/category'     → <contentDir>/YYYY-MM-DD-untitled/<category>
-                                --structure 'category-title/date'     → <contentDir>/<category>-untitled/YYYY-MM-DD
-                              '/' は階層の区切り，'-' はワードの結合を意味します．`
-  )
+                                --structure 'category/date/title' → <contentDir>/<category>/YYYY-MM-DD/untitled
+                                --structure 'date-title/category' → <contentDir>/YYYY-MM-DD-untitled/<category>
+                                --structure 'category-title/date' → <contentDir>/<category>-untitled/YYYY-MM-DD
+
+                              ショートカット表記：
+                                'category' = 'c'，'date' = 'd'，'title' = 't'
+
+                              例（ショートカット）：
+                                -s 'c-t/d' → <contentDir>/<category>-untitled/YYYY-MM-DD
+  `)
   .option("-c, --category <category>", "コンテンツのカテゴリ（--structure に 'category' を含む場合は必須）")
   .option("-d, --date [date]", "作成日付を指定します．'YYYY-MM-DD' 形式または 'today'（デフォルト：today）", "today")
   .option("-t, --title [title]", "新しいコンテンツのタイトル（デフォルト：'untitled'）", "untitled")
   .option("-f, --filename [filename]", "コンテンツファイルのファイル名（デフォルト：'index'）", "index")
   .option("--force", "既存のファイル・ディレクトリがあっても上書きします")
   .description("新しいコンテンツファイルを作成します．" + "ディレクトリ構造やカテゴリ，日付などを柔軟に指定可能です．")
-  .showHelpAfterError()
+  // .showHelpAfterError()
   .action(createAction);
 
 export default createCommand;
