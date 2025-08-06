@@ -4,8 +4,8 @@ import { ContentConfig } from "../types/config";
 
 const CONFIG_FILE = "content.config.json";
 
-function loadConfig(projectDir: string): ContentConfig | undefined {
-  const configPath = path.posix.join(projectDir, CONFIG_FILE);
+function loadConfig(contentDir: string): ContentConfig | undefined {
+  const configPath = path.posix.join(contentDir, CONFIG_FILE);
 
   if (!fs.existsSync(configPath)) {
     console.error(`${configPath} は存在しません`);

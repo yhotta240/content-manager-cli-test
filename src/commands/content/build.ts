@@ -13,10 +13,10 @@ const META_INDEX_FILE = "content.meta.json";
 // メタデータオブジェクトの作成
 function createMeta(
   entry: string,
-  projectDir: string,
+  contentDir: string,
   config: ContentConfig
 ): FullContentMeta {
-  const source = fs.readFileSync(path.posix.join(projectDir, entry), "utf-8");
+  const source = fs.readFileSync(path.posix.join(contentDir, entry), "utf-8");
   const { data, content } = matter(source);
 
   // 基本的なメタデータをフロントマターから取得
@@ -34,11 +34,11 @@ function createMeta(
 
   const extend: ExtendedMeta = {
     filename: path.basename(entry, path.extname(entry)),
-    contentDir: config.contentDir,
+    contentDir: config.contentDir || contentDir,
     contentName: contentName,
     metaIndexFile: META_INDEX_FILE,
     filePatterns: config.filePatterns,
-    rawContentPath: path.posix.join(projectDir, entry), // 実際のファイルパス
+    rawContentPath: path.posix.join(contentDir, entry), // 実際のファイルパス
     url: data.slug ? `/${data.slug}` : `/${path.basename(entry, path.extname(entry))}`, // slugがあれば使い、なければファイル名から生成
     visibility: "public",
     priority: 0,
@@ -65,13 +65,13 @@ function createMeta(
 }
 
 // コンテンツを解析し，メタデータファイル (`content.meta.json`) を生成・更新する
-async function buildAction(projectDir: string, options: ContentMetaOptions) {
-  // projectDir から content.config.json 設定ファイルを読み込む
-  const config = loadConfig(projectDir);
+async function buildAction(contentDir: string, options: ContentMetaOptions) {
+  // contentDir から content.config.json 設定ファイルを読み込む
+  const config = loadConfig(contentDir);
   if (!config) return;
 
-  const { contentDir, filePatterns }: ContentConfig = config;
-  const contentRoot = path.posix.resolve(projectDir, contentDir || '.');
+  const { filePatterns }: ContentConfig = config;
+  const contentRoot = path.posix.resolve(contentDir);
   console.log("コンテンツルート:", contentRoot);
 
   // filePatterns を使用して、コンテンツルートからファイルを検索
@@ -88,7 +88,7 @@ async function buildAction(projectDir: string, options: ContentMetaOptions) {
 
   const metas: FullContentMeta[] = [];
   entries.forEach((entry: string) => {
-    const metaData = createMeta(entry, projectDir, config);
+    const metaData = createMeta(entry, contentDir, config);
     metas.push(metaData);
   });
 
@@ -105,8 +105,8 @@ async function buildAction(projectDir: string, options: ContentMetaOptions) {
 }
 
 const buildCommand = new Command("build")
-  .usage("<projectDir> [options]")
-  .argument("projectDir", "ビルド対象のプロジェクトディレクトリ")
+  .usage("<contentDir> [options]")
+  .argument("contentDir", "コンテンツディレクトリ（content.config.json が配置されているディレクトリ）")
   .option("-c, --category <category>", "指定したカテゴリに属するコンテンツのみビルド")
   .description("コンテンツを解析し，メタデータファイル (`content.meta.json`) を生成・更新します．")
   .action(buildAction);
