@@ -1,21 +1,18 @@
 import { Command } from "commander";
-import fs from 'fs';
-import path from 'path';
-import fg from 'fast-glob';
+import fs from "fs";
+import path from "path";
+import fg from "fast-glob";
 import matter from "gray-matter";
 import { ContentMeta, ContentMetaIndex, ContentMetaOptions, ExtendedMeta, FullContentMeta } from "../../types/meta";
 import { ContentConfig } from "../../types/config";
 import { loadConfig } from "../../utils/config.js";
 import { createFile } from "../../utils/file.js";
+import { getStructureFromAlias, structureToPart } from "../../options/structure.js";
+import { Structure } from "../../types/option";
 
 const META_INDEX_FILE = "content.meta.json";
 
-// メタデータオブジェクトの作成
-function createMeta(
-  entry: string,
-  contentDir: string,
-  config: ContentConfig
-): FullContentMeta {
+function createMeta(entry: string, contentDir: string, config: ContentConfig): FullContentMeta {
   const source = fs.readFileSync(path.posix.join(contentDir, entry), "utf-8");
   const { data, content } = matter(source);
 
@@ -53,7 +50,7 @@ function createMeta(
       readingTime: readTime,
       headingCount: 0,
       imageCount: 0,
-      codeBlockCount: 0
+      codeBlockCount: 0,
     },
   };
 
@@ -70,45 +67,91 @@ async function buildAction(contentDir: string, options: ContentMetaOptions) {
   const config = loadConfig(contentDir);
   if (!config) return;
 
-  const { filePatterns }: ContentConfig = config;
+  const { filePatterns, structures }: ContentConfig = config;
   const contentRoot = path.posix.resolve(contentDir);
-  console.log("コンテンツルート:", contentRoot);
+  console.log("Content Root:", contentRoot);
 
-  // filePatterns を使用して、コンテンツルートからファイルを検索
-  const entries = await fg(filePatterns!, {
-    cwd: contentRoot,
-    onlyFiles: true
+  const structureAlias = getStructureFromAlias(options.target); // 省略形を正式名称に変換
+  const structurePart: string | undefined = structureToPart(structureAlias, options, true);
+
+  const structureSet = new Set<string>();
+  structures?.forEach((structure: Structure) => {
+    const value = structure[structureAlias as keyof Structure] as string;
+    if (typeof value === "string") {
+      structureSet.add(value);
+    }
   });
-  // console.log("対象ファイル:", entries.join(", "));
 
-  if (entries.length === 0) {
-    console.log("コンテンツファイルが見つかりません");
+  let structureParts: string[] = Array.from(structureSet);
+  // structurePart が指定されている場合，構造情報を絞り込む
+  if (structurePart !== undefined) {
+    structureParts = structureParts.filter((structure: string) => structure === structurePart);
+  }
+  if (structureParts.length === 0) {
+    console.log(`[target=${structureAlias}] ${structureAlias}: '${structurePart}' に一致するディレクトリが見つかりません`);
     return;
   }
 
-  const metas: FullContentMeta[] = [];
-  entries.forEach((entry: string) => {
-    const metaData = createMeta(entry, contentDir, config);
-    metas.push(metaData);
-  });
+  // 構造情報をコンテンツルートから検索
+  for (const structure of structureParts) {
+    // content.meta.json を生成するコンテンツパス
+    const contentPath = path.posix.join(contentRoot, structure);
+    // console.log("Content Path:", contentPath);
 
-  const payload: ContentMetaIndex = {
-    version: 1,
-    generatedAt: new Date().toISOString(),
-    count: metas.length,
-    metas: metas,
-  };
+    if (!fs.existsSync(contentPath)) {
+      console.error(`${contentPath} は存在しません`);
+      continue; // 次のループへ
+    }
 
-  const outputFilePath = path.posix.resolve(contentRoot, META_INDEX_FILE);
-  const successMessage = `\n✅ ${META_INDEX_FILE} (${metas.length} 件) を生成しました\nPath: ${outputFilePath}`;
-  createFile(outputFilePath, JSON.stringify(payload, null, 2), successMessage);
+    // filePatterns を使用して、contentPath からファイルを検索
+    const contentFiles: string[] = await fg(filePatterns!, {
+      cwd: contentPath,
+      onlyFiles: true,
+    });
+    // console.log("対象ファイル:", entries.join(", "));
+
+    if (contentFiles.length === 0) {
+      console.log("コンテンツファイルが見つかりません");
+      continue; // 次のループへ
+    }
+
+    const metas: FullContentMeta[] = [];
+    contentFiles.forEach((entry: string) => {
+      const metaData = createMeta(entry, contentPath, config);
+      metas.push(metaData);
+    });
+
+    const payload: ContentMetaIndex = {
+      version: 1,
+      generatedAt: new Date().toISOString(),
+      count: metas.length,
+      metas: metas,
+    };
+
+    const outputFilePath = path.posix.resolve(contentPath, META_INDEX_FILE);
+    const successMessage = `✅ ${META_INDEX_FILE} (${metas.length} 件) を生成しました\nPath: ${outputFilePath}\n`;
+    createFile(outputFilePath, JSON.stringify(payload, null, 2), successMessage);
+  }
 }
 
 const buildCommand = new Command("build")
   .usage("<contentDir> [options]")
-  .argument("contentDir", "コンテンツディレクトリ（content.config.json が配置されているディレクトリ）")
-  .option("-c, --category <category>", "指定したカテゴリに属するコンテンツのみビルド")
-  .description("コンテンツを解析し，メタデータファイル (`content.meta.json`) を生成・更新します．")
+  .argument("contentDir", "コンテンツのルートディレクトリ（content.config.json を含む）")
+  .option(
+    "--target <structure>",
+    `出力先の単一ディレクトリを指定します（'category'，'date'，'title' を組み合わせて指定）．
+                            例：
+                              --target 'category' → <category>
+                              --target 'date-title' → YYYY-MM-DD-untitled
+                              --target 'c-t'（ショートカット）→ <category>-untitled
+
+                            ショートカット表記：
+                              'category' = 'c'，'date' = 'd'，'title' = 't'
+  `)
+  .option("-c, --category <category>", "指定カテゴリのコンテンツのみ対象とします")
+  .option("-o, --outFile <path>", "出力するメタデータファイルのパス（デフォルト：<contentDir>/content.meta.json）")
+  .option("--pretty", "メタデータJSONを整形出力します（デフォルト：圧縮形式）", false)
+  .description("指定ディレクトリ内のコンテンツを解析し，メタデータファイル（content.meta.json）を生成・更新します．")
   .action(buildAction);
 
 export default buildCommand;

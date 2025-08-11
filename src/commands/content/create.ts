@@ -1,30 +1,17 @@
 import { Command } from "commander";
 import fs from 'fs';
 import path from 'path';
+import matter from "gray-matter";
 import { ContentMeta, ContentMetaOptions } from "../../types/meta";
 import { ContentConfig } from "../../types/config";
 import { confirm } from "../../utils/confirm.js";
 import { createFile } from "../../utils/file.js";
-import matter from "gray-matter";
+import { getStructureFromAlias, structureToPath } from "../../options/structure.js";
+import { getToday } from "../../utils/date.js";
+import { writeConfig } from "../../utils/config.js";
 
 const CONFIG_FILE = "content.config.json";
-const STRUCTURE_ALIAS_MAP: Record<string, string> = {
-  c: "category",
-  d: "date",
-  t: "title",
-};
 
-function getStructureAlias(structure: string | undefined): string | undefined {
-  if (!structure) return;
-
-  return structure.split("/").map(part => part.split("-")
-    .map(token => STRUCTURE_ALIAS_MAP[token] ?? token)  // 省略形を正式名称に変換
-    .join("-")).join("/");
-}
-
-function getToday(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 // 'create' コマンドのアクション
 async function createAction(contentDir: string, options: ContentMetaOptions) {
   // 設定ファイル content.config.json を読み込む
@@ -40,48 +27,10 @@ async function createAction(contentDir: string, options: ContentMetaOptions) {
 
   const { structure, category, date, title, filename, force }: ContentMetaOptions = options;
 
-  const expanded = getStructureAlias(structure);
-  const parts = expanded?.split("/");
-  const pathParts: string[] = [];
+  const structureAlias = getStructureFromAlias(structure);
+  const structurePath = structureToPath(structureAlias, { category, date, title });
+  if (structurePath === undefined) return;
 
-  if (parts) {
-    for (const part of parts) {
-      const subParts = part.split("-"); // ワードの結合（階層ではない）
-      try {
-        const resolvedSubParts = subParts.map((p) => {
-          switch (p) {
-            case "category":
-              if (!category) {
-                throw "missing_category";
-              }
-              return category;
-
-            case "date":
-              return date === "today" ? getToday() : date || getToday();
-
-            case "title":
-              return title || "untitled";
-
-            default:
-              throw "invalid_structure";
-          }
-        });
-
-        pathParts.push(resolvedSubParts.join("-"));
-      } catch (err) {
-        if (err === "missing_category") {
-          console.error("structureに 'category' が含まれていますが，--category オプションが指定されていません．");
-        } else if (err === "invalid_structure") {
-          console.error("--structure の形式が正しくありません．'category' | 'date' | 'title' のみ使用可能です．");
-        } else {
-          console.error("未知のエラーが発生しました");
-        }
-        return;
-      }
-    }
-  }
-
-  const structurePath = pathParts.join("/");
   const titleStr = title || "untitled";
   const dateDir = date === "today" ? getToday() : date || getToday();
   const contentPath = path.posix.join(contentDir, structurePath);
@@ -114,6 +63,7 @@ async function createAction(contentDir: string, options: ContentMetaOptions) {
   const contentWithMeta = matter.stringify(content, meta);
 
   createFile(contentFilePath, contentWithMeta);
+  writeConfig(config, options, contentFilePath);
 }
 
 const createCommand = new Command("create")

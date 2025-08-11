@@ -1,6 +1,7 @@
+import { Structure } from "./option";
 export interface ContentConfig {
   contentName?: string;  // content.config.json で定義されているコンテンツ名
-  contentDir?: string;   // content.config.json が置かれているディレクトリ(プロジェクトルートからの相対パス)
+  contentDir: string;   // content.config.json が置かれているディレクトリ(プロジェクトルートからの相対パス)
   metaIndexFile?: string;
   defaultMeta?: {
     author?: string;
@@ -8,6 +9,7 @@ export interface ContentConfig {
     [key: string]: any;
   };
   filePatterns?: string[];
+  structures?: Structure[];
 }
 
 export interface ContentConfigOptions {

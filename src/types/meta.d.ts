@@ -55,6 +55,7 @@ export type StructureKey = "category" | "date" | "title";
 
 export interface ContentMetaOptions {
   structure?: StructureKey; // 構造
+  target?: string;           // 出力先
   category?: string;        // カテゴリ
   date?: string;            // YYYY-MM-DD
   title?: string;           // タイトル

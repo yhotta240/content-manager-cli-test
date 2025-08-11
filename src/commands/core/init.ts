@@ -3,20 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { ContentConfig, ContentConfigOptions } from "../../types/config";
 import { confirm } from "../../utils/confirm.js";
+import { writeConfigFile } from "../../utils/config.js";
 
 const CONFIG_FILE = "content.config.json";
-
-// 設定ファイルを作成する
-function writeConfigFile(contentDir: string, config: ContentConfig) {
-  const configPath = path.join(contentDir, CONFIG_FILE);
-  // ディレクトリがなければ作成
-  if (!fs.existsSync(contentDir)) {
-    fs.mkdirSync(contentDir, { recursive: true });
-  }
-
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log(`${configPath} を作成しました`);
-}
 
 // 'init' コマンドのアクション
 async function initAction(contentDir: string, options: ContentConfigOptions) {
@@ -45,7 +34,8 @@ async function initAction(contentDir: string, options: ContentConfigOptions) {
       lang: lang || "ja",
       author: author || "",
     },
-    filePatterns: targetFilePatterns
+    filePatterns: targetFilePatterns,
+    structures: [],
   };
 
   writeConfigFile(contentDir, config);
