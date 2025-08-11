@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import initCommand from './commands/core/init.js';
-import createCommand from './commands/content/create.js';
-import buildCommand from './commands/content/build.js';
+import initCommand from './commands/setup/init.js';
+import createCommand from './commands/manage/create.js';
+import buildCommand from './commands/manage/build.js';
 
 const program = new Command().configureHelp({
   subcommandTerm: (cmd) => cmd.name() + ' ' + cmd.usage(),
