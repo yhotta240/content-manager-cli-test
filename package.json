@@ -1,6 +1,6 @@
 {
   "name": "content-manager-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "カテゴリごとに Markdown コンテンツとメタ情報を管理できる汎用 CLI ツール",
   "main": "index.js",
   "type": "module",
