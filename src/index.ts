@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import initCommand from './commands/setup/init.js';
 import createCommand from './commands/manage/create.js';
 import buildCommand from './commands/manage/build.js';
+import ghPagesCommand from './commands/setup/gh-pages.js';
 
 const program = new Command().configureHelp({
   subcommandTerm: (cmd) => cmd.name() + ' ' + cmd.usage(),
@@ -26,5 +27,7 @@ program
 program.addCommand(initCommand);
 program.addCommand(createCommand);
 program.addCommand(buildCommand);
+program.addCommand(ghPagesCommand);
+
 
 program.parse();
