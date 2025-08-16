@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - dist/**/*
+      - test-content/**/*
       - .github/workflows/**
   workflow_dispatch:
 permissions:
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Prepare deploy directory
-        run: mkdir deploy-root && mv dist deploy-root/
+        run: mkdir deploy-root && mv test-content deploy-root/
       - name: Update artifact
         uses: actions/upload-pages-artifact@v3
         with:
