@@ -1,0 +1,32 @@
+{
+  "contentDir": "test-content",
+  "contentName": "test-content",
+  "metaIndexFile": "content.meta.json",
+  "defaultMeta": {
+    "lang": "ja",
+    "author": ""
+  },
+  "filePatterns": [
+    "**/*.md",
+    "**/*.txt",
+    "**/*.html"
+  ],
+  "structures": [
+    {
+      "slug": "test-content/blog/2025-08-16/index.md",
+      "structure": "category/date",
+      "category": "blog",
+      "title": "untitled",
+      "date": "2025-08-16",
+      "file": "index"
+    },
+    {
+      "slug": "test-content/events/2025-08-16/index.md",
+      "structure": "category/date",
+      "category": "events",
+      "title": "untitled",
+      "date": "2025-08-16",
+      "file": "index"
+    }
+  ]
+}

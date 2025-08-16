@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "generatedAt": "2025-08-16T00:06:26.520Z",
+  "count": 1,
+  "metas": [
+    {
+      "meta": {
+        "id": "fsoyxr5a1u5",
+        "title": "untitled",
+        "date": "2025-08-16",
+        "updated": "2025-08-16",
+        "category": "blog",
+        "thumbnail": "",
+        "tags": [],
+        "slug": "test-content/blog/2025-08-16",
+        "lang": "ja",
+        "author": ""
+      },
+      "filename": "index",
+      "contentDir": "test-content",
+      "contentName": "blog",
+      "metaIndexFile": "content.meta.json",
+      "filePatterns": [
+        "**/*.md",
+        "**/*.txt",
+        "**/*.html"
+      ],
+      "rawContentPath": "/dev/content-manager-cli/test-content/blog/2025-08-16/index.md",
+      "url": "/test-content/blog/2025-08-16",
+      "visibility": "public",
+      "priority": 0,
+      "createdBy": "",
+      "modifiedBy": "",
+      "relatedIds": [],
+      "headings": [],
+      "contentStats": {
+        "charCount": 11,
+        "wordCount": 2,
+        "lineCount": 2,
+        "readingTime": 1,
+        "headingCount": 0,
+        "imageCount": 0,
+        "codeBlockCount": 0
+      }
+    }
+  ]
+}
