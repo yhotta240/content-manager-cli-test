@@ -21,7 +21,7 @@ function getGhPagesWorkflow(options: GhPagesOptions): string {
     on: {
       push: {
         branches: [branch],
-        paths: [`${buildDir}/**/*`].filter(Boolean),
+        paths: [`${buildDir}/**/*`, '.github/workflows/**'].filter(Boolean),
       },
       workflow_dispatch: null,
     },

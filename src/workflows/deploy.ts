@@ -1,7 +1,12 @@
+import { url } from "node:inspector";
 import type { PublishType } from "../types/gh-pages";
 
 function getDeployJob(publishType: PublishType, buildDir: string, extRepo: string, tokenName: string, jekyll: boolean) {
   const deployJob: any = {
+    environment: {
+      name: 'github-pages',
+      url: '${{ steps.deployment.outputs.page_url }}'
+    },
     'runs-on': 'ubuntu-latest',
   };
 
@@ -19,10 +24,14 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
           uses: 'actions/checkout@v4',
         },
         {
+          name: 'Prepare deploy directory',
+          run: `mkdir deploy-root && mv ${buildDir} deploy-root/`
+        },
+        {
           name: 'Update artifact',
           uses: 'actions/upload-pages-artifact@v3',
           with: {
-            path: buildDir,
+            path: 'deploy-root',
           },
         },
         {
@@ -64,17 +73,17 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
       break;
 
     case 'privateRepo':
-        steps = [
-            {
-                name: 'Deploy content to private repository',
-                uses: 'peaceiris/actions-gh-pages@v3',
-                with: {
-                    'personal-token': `\${{ secrets.${tokenName} }}`,
-                    publish_dir: buildDir,
-                },
-            },
-        ];
-        break;
+      steps = [
+        {
+          name: 'Deploy content to private repository',
+          uses: 'peaceiris/actions-gh-pages@v3',
+          with: {
+            'personal-token': `\${{ secrets.${tokenName} }}`,
+            publish_dir: buildDir,
+          },
+        },
+      ];
+      break;
 
     case 'externalService':
       steps = [
