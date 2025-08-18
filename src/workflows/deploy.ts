@@ -1,4 +1,3 @@
-import { url } from "node:inspector";
 import type { PublishType } from "../types/gh-pages";
 
 function getDeployJob(publishType: PublishType, buildDir: string, extRepo: string, tokenName: string, jekyll: boolean) {

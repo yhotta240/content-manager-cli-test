@@ -21,18 +21,18 @@ async function ghPagesAction(contentDir: string, options: GhPagesOptions) {
       return;
     }
   }
-
-  const workflow = getGhPagesWorkflow(options as GhPagesOptions);
+  contentDir = path.posix.normalize(contentDir).replace(/\/$/, "");
+  const workflow = getGhPagesWorkflow(contentDir, options as GhPagesOptions);
 
   createFile(workflowPath, workflow, `✅ ${workflowPath} を作成しました`);
   console.log("GitHubリポジトリの Actions secrets で 'ACTIONS_DEPLOY_KEY' の設定が必要な場合があります．");
 }
 
 const ghPagesCommand = new Command("gh-pages")
-  .usage("[contentDir] [options]")
-  .argument("[contentDir]", "content.config.json を配置するディレクトリ（プロジェクトルートからの相対パス，デフォルト：content）", "content")
+  .usage("<contentDir> [options]")
+  .argument("contentDir", "content.config.json を配置するディレクトリ（プロジェクトルートからの相対パス")
   .option("-b, --branch <branch>", "デプロイ先のブランチ名", "main")
-  .option("-d, --build-dir <dir>", "ビルド成果物が格納され るディレクトリ(デフォルト：dist)", "dist")
+  .option("-d, --build-dir <dir>", "ビルド成果物が格納されるディレクトリ")
   .option("-p, --publish-type <type>", "GitHub Pages への公開方法", "sameRepoMain" as PublishType)
   .option("-r, --ext-repo <repo>", "外部リポジトリの URL")
   .option("-t, --token-name <name>", "GITHUB_TOKEN の名前", "ACTIONS_DEPLOY_KEY")

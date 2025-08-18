@@ -1,6 +1,6 @@
 export interface GhPagesOptions {
   branch: string;
-  buildDir: string;
+  buildDir?: string;
   nodeVersion: string;
   publishType: PublishType;
   extRepo: string;
