@@ -17,28 +17,38 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
 
   switch (publishType) {
     case 'sameRepoMain':
-      steps = [
-        {
-          name: 'Checkout',
-          uses: 'actions/checkout@v4',
-        },
-        {
-          name: 'Prepare deploy directory',
-          run: `mkdir deploy-root && mv ${buildDir} deploy-root/`
-        },
-        {
-          name: 'Update artifact',
-          uses: 'actions/upload-pages-artifact@v3',
-          with: {
-            path: 'deploy-root',
+      if (jekyll) {
+        // Jekyll がある場合は既にビルド済みなので deploy だけ
+        steps = [
+          {
+            name: 'Deploy content to GitHub Pages',
+            id: 'deployment',
+            uses: 'actions/deploy-pages@v4',
           },
-        },
-        {
-          name: 'Deploy content to GitHub Pages',
-          id: 'deployment',
-          uses: 'actions/deploy-pages@v4',
-        },
-      ];
+        ];
+      } else {
+        // Jekyll がない場合は Checkout → Prepare → Upload → Deploy
+        steps = [
+          {
+            name: 'Checkout',
+            uses: 'actions/checkout@v4',
+          },
+          {
+            name: 'Prepare deploy directory',
+            run: `mkdir deploy-root && mv ${buildDir} deploy-root/`,
+          },
+          {
+            name: 'Upload artifact',
+            uses: 'actions/upload-pages-artifact@v3',
+            with: { path: 'deploy-root' },
+          },
+          {
+            name: 'Deploy content to GitHub Pages',
+            id: 'deployment',
+            uses: 'actions/deploy-pages@v4',
+          },
+        ];
+      }
       break;
 
     case 'sameRepoGhPages':
