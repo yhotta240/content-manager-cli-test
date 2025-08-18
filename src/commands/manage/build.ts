@@ -12,8 +12,9 @@ import { Structure } from "../../types/option";
 
 const META_INDEX_FILE = "content.meta.json";
 
-function createMeta(entry: string, contentDir: string, config: ContentConfig): FullContentMeta {
-  const source = fs.readFileSync(path.posix.join(contentDir, entry), "utf-8");
+function createMeta(entry: string, contentPath: string, contentDir: string, config: ContentConfig): FullContentMeta {
+  const contentPathRelative = path.posix.relative(path.posix.resolve("./"), contentPath);
+  const source = fs.readFileSync(path.posix.join(contentPath, entry), "utf-8");
   const { data, content } = matter(source);
 
   // 基本的なメタデータをフロントマターから取得
@@ -35,8 +36,8 @@ function createMeta(entry: string, contentDir: string, config: ContentConfig): F
     contentName: contentName,
     metaIndexFile: META_INDEX_FILE,
     filePatterns: config.filePatterns,
-    rawContentPath: path.posix.join(contentDir, entry), // 実際のファイルパス
-    url: data.slug ? `/${data.slug}` : `/${path.basename(entry, path.extname(entry))}`, // slugがあれば使い、なければファイル名から生成
+    rawContentPath: path.posix.join(contentPathRelative, path.posix.dirname(entry)),
+    url: path.posix.join(contentPathRelative, entry),
     visibility: "public",
     priority: 0,
     createdBy: "",
@@ -96,7 +97,7 @@ async function buildAction(contentDir: string, options: ContentMetaOptions) {
   for (const structure of structureParts) {
     // content.meta.json を生成するコンテンツパス
     const contentPath = path.posix.join(contentRoot, structure);
-    // console.log("Content Path:", contentPath);
+    console.log("Content Path:", contentPath);
 
     if (!fs.existsSync(contentPath)) {
       console.error(`${contentPath} は存在しません`);
@@ -117,7 +118,7 @@ async function buildAction(contentDir: string, options: ContentMetaOptions) {
 
     const metas: FullContentMeta[] = [];
     contentFiles.forEach((entry: string) => {
-      const metaData = createMeta(entry, contentPath, config);
+      const metaData = createMeta(entry, contentPath, contentDir, config);
       metas.push(metaData);
     });
 
