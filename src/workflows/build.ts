@@ -18,20 +18,27 @@ function getBuildJob(buildDir: string, jekyll: boolean) {
         },
       },
       {
-        name: 'Install dependencies',
-        run: 'bundle install',
+        name: 'Install Jekyll',
+        run: 'gem install jekyll',
+      },
+      {
+        name: 'Prepare build directory',
+        run: `mkdir build-root && mv ${buildDir} build-root/`,
       },
       {
         name: 'Build with Jekyll',
         uses: 'actions/jekyll-build-pages@v1',
         with: {
-          source: buildDir,
+          source: 'build-root',
           destination: './_site',
         },
       },
       {
         name: 'Upload artifact',
         uses: 'actions/upload-pages-artifact@v3',
+        with: {
+          path: './_site',
+        },
       },
     ],
   };
