@@ -61,6 +61,7 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
             github_token: '${{ secrets.GITHUB_TOKEN }}',
             publish_branch: 'gh-pages',
             publish_dir: buildDir,
+            enable_jekyll: jekyll,
           },
         },
       ];
@@ -77,6 +78,7 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
             'external-repository': extRepo,
             publish_branch: publishType === 'otherRepoMain' ? 'main' : 'gh-pages',
             publish_dir: buildDir,
+            enable_jekyll: jekyll,
           },
         },
       ];
