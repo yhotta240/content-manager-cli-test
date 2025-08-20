@@ -30,7 +30,7 @@ function getGhPagesWorkflow(contentDir: string, options: GhPagesOptions): string
       workflow_dispatch: null,
     },
     permissions: {
-      contents: 'read',
+      contents: publishType === 'sameRepoMain' ? 'read' : 'write',
       pages: 'write',
       'id-token': 'write',
     },
