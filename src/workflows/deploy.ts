@@ -1,22 +1,19 @@
 import type { PublishType } from "../types/gh-pages";
 
 function getDeployJob(publishType: PublishType, buildDir: string, extRepo: string, tokenName: string, jekyll: boolean) {
-  const deployJob: any = {
-    environment: {
-      name: 'github-pages',
-      url: '${{ steps.deployment.outputs.page_url }}'
-    },
-    'runs-on': 'ubuntu-latest',
-  };
-
-  if (jekyll) {
-    deployJob.needs = 'build';
-  }
-
   let steps: any[];
+  let environment: any;
+
+  environment = {
+    name: 'github-pages',
+  }
 
   switch (publishType) {
     case 'sameRepoMain':
+      environment = {
+        name: 'github-pages',
+        url: '${{ steps.deployment.outputs.page_url }}'
+      }
       if (jekyll) {
         // Jekyll がある場合は既にビルド済みなので deploy だけ
         steps = [
@@ -53,6 +50,10 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
 
     case 'sameRepoGhPages':
       steps = [
+        {
+          name: 'Checkout',
+          uses: 'actions/checkout@v4',
+        },
         {
           name: 'Deploy content to gh-pages',
           uses: 'peaceiris/actions-gh-pages@v3',
@@ -105,6 +106,15 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
 
     default:
       steps = [];
+  }
+
+  const deployJob: any = {
+    environment: environment,
+    'runs-on': 'ubuntu-latest',
+  };
+
+  if (jekyll) {
+    deployJob.needs = 'build';
   }
 
   deployJob.steps = steps;
