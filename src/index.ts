@@ -20,7 +20,7 @@ program
   `\nExamples:
   $ content init my-blog     # 新しいブログ用フォルダを初期化
   $ content build ./docs     # ./docs をビルド`)
-  .addHelpText('afterAll', '\nContent Manager CLI v0.1.0')
+  .addHelpText('afterAll', '\nContent Manager CLI v0.5.0')
   .addHelpText('afterAll', 'GitHub: https://github.com/yhotamos/content-manager-cli')
   .addHelpText('afterAll', '\nCopyright (c) 2025 yhotamos');
 
