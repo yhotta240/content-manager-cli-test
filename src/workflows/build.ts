@@ -1,5 +1,9 @@
-function getBuildJob(buildDir: string, jekyll: boolean) {
+function getBuildJob(publishType: string, buildDir: string, jekyll: boolean): any | undefined {
   if (!jekyll) {
+    return undefined;
+  }
+
+  if (publishType !== 'sameRepoMain') {
     return undefined;
   }
 

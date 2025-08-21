@@ -3,15 +3,17 @@ import type { GhPagesOptions } from "../types/gh-pages";
 import { getBuildJob } from "./build.js";
 import { getDeployJob } from "./deploy.js";
 
-function getGhPagesWorkflow(contentDir: string, options: GhPagesOptions): string {
+function getGhPagesWorkflow(contentDir: string, options: GhPagesOptions): string | undefined {
   const { branch, buildDir, publishType, extRepo, tokenName, jekyll } = options;
 
   if (buildDir) {
     contentDir = buildDir;
   }
 
-  const buildJob = getBuildJob(contentDir, jekyll);
+  const buildJob = getBuildJob(publishType, contentDir, jekyll);
   const deployJob = getDeployJob(publishType, contentDir, extRepo, tokenName, jekyll);
+
+  if (!deployJob) return undefined;
 
   const jobs: any = {};
 
