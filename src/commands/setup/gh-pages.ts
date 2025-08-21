@@ -24,6 +24,11 @@ async function ghPagesAction(contentDir: string, options: GhPagesOptions) {
   contentDir = path.posix.normalize(contentDir).replace(/\/$/, "");
   const workflow = getGhPagesWorkflow(contentDir, options as GhPagesOptions);
 
+  if (!workflow) {
+    console.error("ワークフローの生成に失敗しました。");
+    return;
+  }
+
   createFile(workflowPath, workflow, `✅ ${workflowPath} を作成しました`);
   console.log("GitHubリポジトリの Actions secrets で 'ACTIONS_DEPLOY_KEY' の設定が必要な場合があります．");
 }

@@ -1,12 +1,17 @@
 import type { PublishType } from "../types/gh-pages";
 
-function getDeployJob(publishType: PublishType, buildDir: string, extRepo: string, tokenName: string, jekyll: boolean) {
+function getDeployJob(publishType: PublishType, buildDir: string, extRepo: string, tokenName: string, jekyll: boolean): any | undefined {
   let steps: any[];
   let environment: any;
 
   environment = {
     name: 'github-pages',
   }
+
+  const deployJob: any = {
+    environment: environment,
+    'runs-on': 'ubuntu-latest',
+  };
 
   switch (publishType) {
     case 'sameRepoMain':
@@ -23,6 +28,7 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
             uses: 'actions/deploy-pages@v4',
           },
         ];
+        deployJob.needs = 'build';
       } else {
         // Jekyll がない場合は Checkout → Prepare → Upload → Deploy
         steps = [
@@ -46,6 +52,7 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
           },
         ];
       }
+
       break;
 
     case 'sameRepoGhPages':
@@ -69,13 +76,22 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
 
     case 'otherRepoMain':
     case 'otherRepoGhPages':
+      if (!extRepo) {
+        console.log(`--ext-repo を指定してください`);
+        return undefined;
+      }
+
       steps = [
+        {
+          name: 'Checkout',
+          uses: 'actions/checkout@v4',
+        },
         {
           name: `Deploy content to another repository ${publishType === 'otherRepoMain' ? 'main' : 'gh-pages'}`,
           uses: 'peaceiris/actions-gh-pages@v3',
           with: {
-            'personal-token': `\${{ secrets.${tokenName} }}`,
-            'external-repository': extRepo,
+            personal_token: `\${{ secrets.ACTIONS_DEPLOY_KEY }}`,
+            external_repository: extRepo,
             publish_branch: publishType === 'otherRepoMain' ? 'main' : 'gh-pages',
             publish_dir: buildDir,
             enable_jekyll: jekyll,
@@ -87,10 +103,14 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
     case 'privateRepo':
       steps = [
         {
+          name: 'Checkout',
+          uses: 'actions/checkout@v4',
+        },
+        {
           name: 'Deploy content to private repository',
           uses: 'peaceiris/actions-gh-pages@v3',
           with: {
-            'personal-token': `\${{ secrets.${tokenName} }}`,
+            personal_token: `\${{ secrets.${tokenName} }}`,
             publish_dir: buildDir,
           },
         },
@@ -108,15 +128,6 @@ function getDeployJob(publishType: PublishType, buildDir: string, extRepo: strin
 
     default:
       steps = [];
-  }
-
-  const deployJob: any = {
-    environment: environment,
-    'runs-on': 'ubuntu-latest',
-  };
-
-  if (jekyll) {
-    deployJob.needs = 'build';
   }
 
   deployJob.steps = steps;
