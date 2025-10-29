@@ -2,128 +2,107 @@
 
 [![npm version](https://badge.fury.io/js/content-manager-cli.svg)](https://badge.fury.io/js/content-manager-cli)
 
-カテゴリごとに Markdown コンテンツとメタ情報を管理できる汎用 CLI ツールです．
+カテゴリごとに Markdown コンテンツとメタ情報を管理できる，軽量な CLI ツールです．
 
-## 主な特徴
+目次
 
-- **柔軟なディレクトリ管理**: カテゴリ・日付・タイトルを自由に組み合わせ，分かりやすい構造でコンテンツを整理．
-- **メタ情報付き Markdown**: メタデータ入りの Markdown ファイルをそのまま作成・管理できる．
-- **メタデータ自動集約**: 複数のコンテンツからメタ情報をまとめ上げ，一覧やサイトマップを自動生成．
-- **GitHub Pages 公開対応**: GitHub Pages へのデプロイ用ワークフローも自動で用意．
+- [概要](#概要)
+- [主な機能](#主な機能)
+- [インストール](#インストール)
+- [クイックスタート](#クイックスタート)
+- [コマンド一覧](#コマンド一覧)
+- [設定ファイル（content.config.json）](#設定ファイルcontentconfigjson)
+- [開発・ビルド](#開発ビルド)
+- [貢献方法](#貢献方法)
+- [ライセンス](#ライセンス)
 
-## 要件
+## 概要
 
-- Node.js (LTS版を推奨)
+Content Manager CLI は，カテゴリごとに整理された Markdown コンテンツとそのメタデータを作成・管理・出力するためのコマンドラインツールです．静的サイトのコンテンツ管理や，ドキュメント群の整理に向いています．
+
+## 主な機能
+
+- 柔軟なディレクトリ構成の生成と管理（カテゴリ，日付，タイトルなどの組み合わせが可能）．
+- Markdown ファイルにメタデータ（front-matter）を付与して管理できる．
+- コンテンツ群からメタ情報を収集し，content.meta.json のようなインデックスを生成できる．
+- GitHub Pages へ公開するためのワークフロー (.github/workflows/content-gh-pages.yml) を生成する補助機能を持つ．
 
 ## インストール
+
+Node.js（LTS 推奨）が必要です．
+
+グローバルにインストールする場合：
 
 ```bash
 npm install -g content-manager-cli
 ```
 
-## 基本的な構文
+パッケージは dist にビルドされた実行ファイルを公開する想定です．ソースから実行する場合はビルド手順（下記）を参照してください．
 
-```
-content <command> [targetDir] [options]
-```
+## クイックスタート
 
-- `<command>`: 実行するコマンド (`init`, `create`, `build` など)
-- `[targetDir]`: `content.config.json` が配置されている，または作成されるディレクトリ．多くのコマンドで必須です．
-- `[options]`: `-c, --category` のようなコマンド固有のオプション．
-
-## 基本的な使い方
-
-1.  **プロジェクトディレクトリの作成**
-
-    ```bash
-    mkdir my-project
-    cd my-project
-    ```
-
-2.  **コンテンツ管理の初期化**
-
-    プロジェクト内に，コンテンツを管理するためのディレクトリを作成します．(デフォルトでは `content` という名前になります)
-
-    ```bash
-    content init
-    ```
-
-3.  **コンテンツの作成**
-
-    カテゴリ `news`，タイトル `my-first-post` でコンテンツを作成します．
-    `-s c/t` は `category/title` のショートカットで，`<カテゴリ>/<タイトル>` というディレクトリ構造を意味します．
-
-    ```bash
-    # ./content/news/my-first-post/index.md が作成される
-    content create content -s c/t -c news -t "my-first-post"
-    ```
-
-4.  **メタデータのビルド**
-
-    カテゴリ(`-c news`)を指定し，そのカテゴリのディレクトリ(`--target c`)をビルドします．これにより，`content/news/content.meta.json` が生成されます．
-
-    ```bash
-    content build content --target c -c news
-    ```
-
-上記のコマンドを実行すると，最終的なディレクトリ構成は以下のようになります．
+1. プロジェクトフォルダを作成して移動します．
 
 ```bash
-my-project/
-└── content/
-    ├── news/
-    │   ├── my-first-post/
-    │   │   └── index.md           # createコマンドで生成
-    │   └── content.meta.json      # buildコマンドで生成
-    └── content.config.json　      # initコマンドで生成
+mkdir my-project
+cd my-project
+```
+
+2. コンテンツの初期化を行います（デフォルトでは content ディレクトリを作成します）．
+
+```bash
+content init
+```
+
+3. 新しいコンテンツを作成します（例：カテゴリ news，タイトル my-first-post）．
+
+```bash
+# ./content/news/my-first-post/index.md が作成されます．
+content create content -s c/t -c news -t "my-first-post"
+```
+
+4. メタデータのビルドを行い，content.meta.json を生成します．
+
+```bash
+content build content --target c -c news
 ```
 
 ## コマンド一覧
 
-### `content init [contentDir] [options]`
+主要コマンドと代表的なオプションの概要です．詳細は `content <command> --help` を参照してください．
 
-新しいコンテンツプロジェクトを初期化し，設定ファイル `content.config.json` を作成します．
+- content init [contentDir]
+  - contentDir：初期化するディレクトリ（デフォルト: content）．
+  - -c, --content-name <name>：コンテンツプロジェクト名を指定します．
+  - -a, --author <name>：作成者名を設定します．
+  - -l, --lang <lang>：デフォルト言語コード（例：ja, en）を指定します．
+  - -f, --file-patterns <patterns>：対象ファイルパターン（カンマ区切り）を指定します．
 
-- `[contentDir]`: 初期化するディレクトリ (デフォルト: `content`)
-- `-c, --content-name <name>`: コンテンツプロジェクト名
-- `-a, --author <name>`: デフォルトの作成者名
-- `-l, --lang <lang>`: デフォルトの言語コード (例: `ja`, `en`)
-- `-f, --file-patterns <patterns>`: 対象コンテンツのファイルパターン (カンマ区切り)
+- content create <contentDir>
+  - <contentDir>：content.config.json があるディレクトリを指定します．
+  - -s, --structure <structure>：ディレクトリ構造のテンプレート（例：c/t は category/title）．
+  - -c, --category <category>：カテゴリ名（structure に category が含まれる場合は必須）．
+  - -d, --date [date]：作成日（YYYY-MM-DD または today）．
+  - -t, --title [title]：タイトル（デフォルト: untitled）．
+  - -f, --filename [filename]：ファイル名（デフォルト: index）．
+  - --force：既存ファイルを上書きします．
 
-### `content create <contentDir> [options]`
+- content build <contentDir>
+  - <contentDir>：content.config.json があるディレクトリを指定します．
+  - --target <structure>：出力対象を単一ディレクトリに指定します．
+  - -c, --category <category>：指定カテゴリのみを対象にします．
+  - --pretty：出力 JSON を整形して書き出します．
 
-新しいコンテンツファイルを作成します．
+- content gh-pages <contentDir>
+  - GitHub Pages 用の公開ワークフローを生成します．
+  - -b, --branch <branch>：デプロイ先ブランチ（デフォルト: main）．
+  - -d, --build-dir <dir>：ビルド成果物が格納されるディレクトリを指定します．
+  - -r, --ext-repo <repo>：外部リポジトリを指定する場合に使用します．
+  - --force：既存ワークフローを上書きします．
 
-- `<contentDir>`: `content.config.json` があるディレクトリ
-- `-s, --structure <structure>`: ディレクトリ構造 (`category`, `date`, `title` の組み合わせ)
-- `-c, --category <category>`: カテゴリ名 (`structure` に `category` を含む場合は必須)
-- `-d, --date [date]`: 作成日 (`YYYY-MM-DD` または `today`) (デフォルト: `today`)
-- `-t, --title [title]`: タイトル (デフォルト: `untitled`)
-- `-f, --filename [filename]`: ファイル名 (デフォルト: `index`)
-- `--force`: 既存ファイルを上書き
+## 設定ファイル（content.config.json）
 
-### `content build <contentDir> [options]`
-
-コンテンツを解析し，メタデータファイル (`content.meta.json`) を生成・更新します．
-
-- `<contentDir>`: `content.config.json` があるディレクトリ
-- `--target <structure>`: 出力対象を単一ディレクトリに指定
-- `-c, --category <category>`: 指定カテゴリのみを対象
-- `--pretty`: JSON を整形して出力
-
-### `content gh-pages <contentDir> [options]`
-
-GitHub Pages への公開用ワークフロー (`.github/workflows/content-gh-pages.yml`) を生成します．
-
-- `<contentDir>`: `content.config.json` があるディレクトリ
-- `-b, --branch <branch>`: デプロイ先のブランチ (デフォルト: `main`)
-- `-d, --build-dir <dir>`: ビルド成果物が格納されるディレクトリ
-- `-r, --ext-repo <repo>`: 外部リポジトリの URL
-- `-f, --force`: 既存のワークフローファイルを上書き
-
-## 設定ファイル (`content.config.json`)
-
-`content init` で生成される設定ファイルです．プロジェクトの挙動をカスタマイズできます．
+`content init` で生成される設定ファイルのサンプルです．必要に応じてフィールドを編集して運用してください．
 
 ```json
 {
@@ -139,16 +118,41 @@ GitHub Pages への公開用ワークフロー (`.github/workflows/content-gh-pa
 }
 ```
 
-## コントリビュート
+## 開発・ビルド
 
-バグ報告，機能提案，プルリクエストはいつでも歓迎します．Issue やプルリクエストを作成する前に，既存の Issue がないか確認してください．
+このリポジトリは TypeScript で実装されています．開発用にソースから実行する場合は，ビルドを行ってから実行してください．
 
-1.  このリポジトリをフォークします．
-2.  フィーチャーブランチを作成します (`git checkout -b feature/your-feature`)．
-3.  変更をコミットします (`git commit -m 'Add some feature'`)．
-4.  ブランチにプッシュします (`git push origin feature/your-feature`)．
-5.  プルリクエストを作成します．
+```bash
+# 依存関係をインストールします．
+npm install
+
+# ビルドします．
+npm run build
+
+# ローカルのビルド済みファイルを使ってコマンドを実行できます．
+node ./dist/index.js --help
+```
+
+開発時に直接 TypeScript を実行したい場合は tsx 等を利用してください．
+
+## 貢献方法
+
+バグ報告，機能提案，PR は歓迎します．
+
+1. リポジトリをフォークします．
+2. ブランチを作成します（例：feature/your-feature）．
+3. 変更をコミットします．
+4. プッシュしてプルリクエストを作成します．
+
+コミットメッセージの形式は次のようにお願いします．
+
+<type>: <要約> [#Issue番号 / refs #Issue番号]
+
+例：
+```
+fix: プログラムの言語検出ロジッ��を追加 [refs #1]
+```
 
 ## ライセンス
 
-このプロジェクトは [MIT ライセンス](LICENSE) の下で公開されています．
+このプロジェクトは MIT ライセンスの下で公開されています．
