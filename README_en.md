@@ -4,7 +4,7 @@
 
 A lightweight CLI tool for managing Markdown content and metadata organized by categories.
 
-Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
